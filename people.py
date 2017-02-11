@@ -15,7 +15,7 @@ class Fellow(People):
 
 	def __init__(self, name):
 		
-		super(Fellow, self).__init__(name, role = "Fellow", wants_accommodation="N")
+		super(Fellow, self).__init__(name, role = "Fellow", wants_accommodation="Y")
 
 	
 class Staff(People):
