@@ -2,7 +2,6 @@ import unittest
 import os
 import sys
 
-# print(sys.path)
 from ..app.classes.amity import Amity
 from ..app.classes.rooms import Room, Office, LivingSpace
 from ..app.classes.people import Fellow, Staff
