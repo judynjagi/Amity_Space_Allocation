@@ -91,11 +91,6 @@ class TestCreateRoom(unittest.TestCase):
 		self.space.create_room("Hogwarts", "OFFICE")
 		self.space.add_person("JAY HAVY", "STAFF", "N")
 
-
-	# def test_allocate_fellow_to_office(self):
-	# 	allocate = self.space.allocate_office("JUDY NYAWIRA", "N")
-	# 	self.assertTrue(allocate)
-
 	def test_print_allocations(self):
 		onscreen = self.space.print_allocations()
 		file = self.space.print_allocations("load.txt")
