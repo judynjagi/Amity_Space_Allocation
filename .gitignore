@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+
+.coverage
+.coverage.*
+
+coverage.xml
+*,cover
+
+.pylintrc
+cover
+.DS_Store
