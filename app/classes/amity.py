@@ -69,9 +69,6 @@ class Amity(object):
 		if type(fullname) != str:
 			cprint("Incorrect name type format.", 'red')
 			return 'Wrong type for name.'
-		# if not fullname.isalpha():
-		# 	cprint("Person names need be alphabetical in nature",'red')
-		# 	return 'Non-Alphabetical names added'
 
 		if position.upper() not in ['STAFF', 'FELLOW']:
 			cprint("Position can either be Fellow or Staff", 'green')
@@ -240,8 +237,9 @@ class Amity(object):
 				cprint ('\n' + sortedrooms.name + ': ' + sortedrooms.room_type, 'red', attrs=['bold'] )
 				cprint ('-' * 50, 'red')
 				for occupant in sortedrooms.occupants:
-					if len(sortedrooms.occupants)>0:
-						cprint (''.join(occupant.name) + ' ', 'green')
+					# if len(sortedrooms.occupants)>0:
+					cprint (''.join(occupant.name) + ' ', 'green')
+				
 
 	def print_unallocated (self, filename="None"):
 		"""A function that prints people who haven't been allocated yet"""
@@ -258,21 +256,19 @@ class Amity(object):
 			cprint("UNALLOCATED PEOPLE", 'red', attrs=['bold'] )
 			cprint ('*' * 50, 'red')
 			for people in self.unallocatedpeople:
-				if len(self.unallocatedpeople)<0:
-					cprint("Everyone is allocated")
-				else:
+				if len(self.unallocatedpeople)>0:
 					cprint (''.join(people.name) + ' ', 'green')
-					
+			cprint("Everyone is allocated", 'green')
+			
 
 	def print_room(self, roomname):
 		"""A function that prints the occupants in the specified room"""
 		for room in self.rooms:
 			if roomname.upper() == room.name:
-				cprint ('\n' + room.name, 'red', attrs=['bold'] )
+				cprint ('\n' + room.name + ':' + ' ' + room.room_type, 'red', attrs=['bold'] )
 				for person in room.occupants:
 					cprint (''.join(person.name) + ' ', 'green')
-
-		# cprint (roomname.upper() + ',' + 'not found', 'green')
+				cprint ('-'*50 + '\n' +  'This room is not occupied.', 'green')
 			
 					
 	def search_person(self, pname):		
@@ -297,7 +293,7 @@ class Amity(object):
 		for room in self.rooms:
 			if room_name.upper() == room.name:
 				return room
-		return "The room name you have entered doesn't exist. Please enter a valid name"
+		return "The room name you have entered doesn't exist. Please enter a valid name."
 
 
 	def reallocate_person (self, pname, new_room):
@@ -305,34 +301,31 @@ class Amity(object):
 		
 		person = self.search_person(pname)
 		room = self.search_room(new_room)
-		print (room)
 
 		# check if the new room is vacant
 		vacant = self.check_vacant_rooms()
-		if room.name not in [vrooms.name for vrooms in vacant['lspace']+ vacant['offices']]:
-			cprint("The room you entered is not vacant", 'red')
-			return "The room you entered is not vacant"
+		if room not in [vacant_rooms for vacant_rooms in vacant['offices']+ vacant['lspace']]:
+			cprint("The room you entered doesn't either exist or is not vacant", 'red')
+			return "The room you entered doesn't either exist or is not vacant"
 
 		# prevent a staff from being reallocated to a livingspace
 		if isinstance(person, Staff) and isinstance (room, LivingSpace):
 			cprint("Staff cannot be allocated an lspace", 'green')
 			return "Staff cannot be allocated an lspace"
 
-		# check if the person is already allocated to the room so as to avoid reallocating them in the same room
-		for vrooms in vacant['lspace']+ vacant['offices']:
-			for a_person in vrooms.occupants:
-				if person.name == a_person.name:
-					if room.name.upper() == vrooms.name:
-						cprint(person.name + ' ' + "is already allocated to" + ' ' + room.name, 'red') 
-					else:
-						vrooms.occupants.remove(a_person)
+		for vacant_rooms in vacant['lspace']+ vacant['offices']:
+			if person in [occupant for occupant in vacant_rooms.occupants]:
+				if room == vacant_rooms:
+					cprint(person.name + ' ' + "is already allocated to" + ' ' + room.name, 'red') 
+					return
+				else:
+					if vacant_rooms.room_type == room.room_type:
+						vacant_rooms.occupants.remove(person)
 
-		room.occupants.append(person)
-		occupied_rooms = self.search_roomoccupants(room.name)
-		person.allocated.append(occupied_rooms)
 
 		# Reallocate a staff or fellow to an office
 		if isinstance (room, Office):
+			room.occupants.append(person)
 			person.allocated.append(self.search_roomoccupants(room.name))
 			self.allocated_rooms.append(room)
 			cprint(person.name + ' ' +"successfully moved to" + ' ' + room.name, 'green')
@@ -347,74 +340,110 @@ class Amity(object):
 		if person in self.unallocatedpeople:
 			self.unallocatedpeople.remove(person)	
 
-	def update_tables(self, session):
-		""" A function that clears all the tables in the database before re-populating it """
-
-		metadata = Base.metadata
-		for table in reversed(metadata.sorted_tables):
-			session.execute(table.delete())
-		session.commit()
-
 	def save_state(self, db_name='default'):
 		"""Function that saves data from Amity's data structures to the database"""
 		engine = create_db(db_name)
 		Base.metadata.bind = engine
 		Session = sessionmaker()
 		session = Session()
-		self.update_tables(session)
 
 		# Saving rooms
 		for room in self.rooms:
-			if isinstance(room, Office):
-				allocated_members = ', '.join([str(i.name) for i in room.occupants])
-				room_name = room.name
-				room_type = room.room_type
-				capacity = room.max_capacity
-				office_record = OfficeModel(office_name = room_name, occupants = allocated_members,\
-					room_type = room_type, max_capacity = capacity)
-				session.add(office_record)
-				session.commit()
+			existing_rooms = session.query(OfficeModel).filter_by(office_name=room.name).first()
+			if existing_rooms == None:
+				if isinstance(room, Office):
+					allocated_members = ', '.join([str(i.name) for i in room.occupants])
+					room_name = room.name
+					room_type = room.room_type
+					capacity = room.max_capacity
+					office_record = OfficeModel(office_name = room_name, occupants = allocated_members,\
+						room_type = room_type, max_capacity = capacity)
+					session.add(office_record)
+					session.commit()
 
-			if isinstance(room, LivingSpace):
-				allocated_members = ', '.join([str(i.name) for i in room.occupants])
-				room_name = room.name
-				room_type = room.room_type
-				capacity = room.max_capacity
-				lspace_record = LivingSpaceModel(lspace_name = room_name, occupants = allocated_members,\
-					room_type = room_type, max_capacity = capacity)
-				session.add(lspace_record)
-				session.commit()
+				elif isinstance(room, LivingSpace):
+					allocated_members = ', '.join([str(i.name) for i in room.occupants])
+					room_name = room.name
+					room_type = room.room_type
+					capacity = room.max_capacity
+					lspace_record = LivingSpaceModel(lspace_name = room_name, occupants = allocated_members,\
+						room_type = room_type, max_capacity = capacity)
+					session.add(lspace_record)
+					session.commit()
+			else:
+				if isinstance(room, Office):
+					existing_rooms.allocated_members = ', '.join([str(i.name) for i in room.occupants])
+					existing_rooms.name = room.name
+					existing_rooms.room_type = room.room_type
+					existing_rooms.capacity = room.max_capacity
+					session.commit()
+
+				elif isinstance(room, LivingSpace):
+					existing_rooms.allocated_members = ', '.join([str(i.name) for i in room.occupants])
+					existing_rooms.name = room.name
+					existing_rooms.room_type = room.room_type
+					existing_rooms.capacity = room.max_capacity
+					session.commit()
 
 		# Saving people
 		for person in self.people:
-			name = person.name
-			role = person.role
-			wants_accommodation = person.wants_accommodation
-			rooms = self.search_roomoccupants(name)
-			if len(rooms) == 0:
-				livingspace = None
-				office = None
-			elif len(rooms) == 1:
-				for allocated_room in rooms:
-					if isinstance(allocated_room, Office):
-						office = allocated_room.name
-						livingspace = None
-					elif isinstance(allocated_room, LivingSpace):
-						livingspace = allocated_room.name
-						office = None
-			elif len(rooms) == 2:
-				wants_accommodation == False
-				for allocated_room in rooms:
-					if isinstance(allocated_room, Office):
-						office = allocated_room.name
-					elif isinstance(allocated_room, LivingSpace):
-						livingspace = allocated_room.name
+			existing_people = session.query(PeopleModel).filter_by(name=person.name).first()
+			if existing_people == None:
+				name = person.name
+				role = person.role
+				wants_accommodation = person.wants_accomodation
+				rooms = self.search_roomoccupants(name)
+				if len(rooms) == 0:
+					livingspace = None
+					office = None
+				elif len(rooms) == 1:
+					for allocated_room in rooms:
+						if isinstance(allocated_room, Office):
+							office = allocated_room.name
+							livingspace = None
+						elif isinstance(allocated_room, LivingSpace):
+							livingspace = allocated_room.name
+							office = None
+				elif len(rooms) == 2:
+					wants_accommodation == False
+					for allocated_room in rooms:
+						if isinstance(allocated_room, Office):
+							office = allocated_room.name
+						elif isinstance(allocated_room, LivingSpace):
+							livingspace = allocated_room.name
 
-			person_records = PeopleModel(name = name, role = role,\
-					accomodate = wants_accommodation, living_space = livingspace, office= office)
+				person_records = PeopleModel(name = name, role = role,\
+						accomodate = wants_accommodation, living_space = livingspace, office= office)
 
-			session.add(person_records)
-			session.commit()
+				session.add(person_records)
+				session.commit()
+			else:
+				existing_people.name = person.name
+				existing_people.role = person.role
+				existing_people.wants_accommodation = person.wants_accomodation
+				rooms = self.search_roomoccupants(existing_people.name)
+				print(rooms)
+				if len(rooms) == 0:
+					existing_people.livingspace = None
+					existing_people.office = None
+				elif len(rooms) == 1:
+					for allocated_room in rooms:
+						if isinstance(allocated_room, Office):
+							existing_people.office = allocated_room.name
+							existing_people.livingspace = None
+						elif isinstance(allocated_room, LivingSpace):
+							existing_people.livingspace = allocated_room.name
+							existing_people.office = None
+				elif len(rooms) == 2:
+					existing_people.wants_accommodation == False
+					for allocated_room in rooms:
+						if isinstance(allocated_room, Office):
+							existing_people.office = allocated_room.name
+						elif isinstance(allocated_room, LivingSpace):
+							existing_people.livingspace = allocated_room.name
+
+				session.commit()
+
 		cprint('Data successfully saved to the Database','red', attrs=['bold'])
 
 	def load_state(self, db_name='default'):
@@ -424,6 +453,11 @@ class Amity(object):
 		Session = sessionmaker()
 		Session.configure(bind=engine)
 		session = Session()
+
+		self.people = []
+		self.rooms = []
+		self.unallocatedpeople = []
+		self.allocated_rooms = []
 
 		people = session.query(PeopleModel).all()
 		offices = session.query(OfficeModel).all()
@@ -476,8 +510,20 @@ class Amity(object):
 
 		cprint("Loading successful ", 'red', attrs=['bold'] )
 
-amity =Amity()
-amity.load_people("people.txt")
+# amity =Amity()
+# # amity.load_people("people.txt")
+# amity.create_room("room1", "livingspace")
+# amity.create_room("room2", "office")
+# amity.create_room("room3", "office")
+# amity.create_room("room4", "office")
+# amity.create_room("room5", "office")
+# amity.add_person("j n", "fellow", "Y")
+# amity.print_room("room")
+# amity.reallocate_person("j n", "room1")
+# amity.print_allocations()
+# amity.print_unallocated()
+
+
 
 
 
