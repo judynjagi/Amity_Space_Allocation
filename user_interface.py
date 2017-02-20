@@ -1,10 +1,11 @@
-"""Welcome to Amity Room Allocation App
+"""WELCOME TO AMITY ROOM ALLOCATION APP
 Usage:
   create_room <room_type> <room_name>...
   add_person <fname> <lname> <role> [--wants_accomodation=N] 
   print_allocations [--o=filename]
   print_unallocated [--o=filename]
-  load_people <filename>
+  print_unallocated_room
+  load_people <filename> #The filename only supports .txt extension"
   reallocate_person <person_name> <new_room_name>
   print_room <room_name>
   save_state [--db=sqlite_database]
@@ -56,17 +57,14 @@ def docopt_cmd(func):
 
 
 class AmityApp(cmd.Cmd):
-
-
-
     cprint(figlet_format('AMITY APP', font='doom'), 'magenta')
     cprint('*' * 60, 'white')
-    cprint("    AMITY ROOM ALLOCATION SYSTEM.    ", 'cyan')
+    cprint("    AMITY ROOM ALLOCATION SYSTEM ", 'cyan')
     cprint('*' * 60, 'white')
     cprint(" Below is a list of available commands.", 'cyan')
     cprint('*' * 60, 'white')
     cprint(__doc__, 'cyan')
-
+    cprint('*' * 60, 'white')
 
     @docopt_cmd
     def do_create_room(self, arg):
@@ -111,6 +109,10 @@ class AmityApp(cmd.Cmd):
         else:
             amity.print_unallocated()
 
+    def do_print_unallocated_room(self, arg):
+        """Usage: print_unallocated_room"""
+        amity.print_unallocated_rooms()
+
     @docopt_cmd
     def do_load_people(self, arg):
         """Usage: load_people <filename>"""
@@ -148,7 +150,7 @@ class AmityApp(cmd.Cmd):
     @docopt_cmd
     def do_exit(self, arg):
         """ Usage: exit"""
-        print("Goodbye!!")
+        cprint('GOODBYE!', 'magenta')
         exit()
 
 

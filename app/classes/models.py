@@ -29,6 +29,6 @@ class OfficeModel(Base):
 
 def create_db(db_name):
 	directory = 'databases/'
-	engine = create_engine('sqlite:///' + directory + db_name)
+	engine = create_engine('sqlite:///' + directory + db_name + '.sqlite')
 	Base.metadata.create_all(engine)
 	return engine
