@@ -1,7 +1,7 @@
 import unittest
 import os
 import sys
-#you'll need to include the directory containing your package directory in PYTHONPATH
+# includes the directory containing your package directory in PYTHONPATH
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = sys.path.append( os.path.join( os.path.dirname(__file__), os.path.pardir ) ) 
 
@@ -166,6 +166,21 @@ class TestCreateRoom(unittest.TestCase):
 		reallocate = self.amity.reallocate_person("JAMES KURIA", "Room11")
 		room = self.amity.search_room("Room10")
 		self.assertIn(room, self.amity.allocated_rooms)
+
+	def test_save_and_load_state(self):
+
+		room = [room.name for room in self.amity.rooms]
+		people = [person.name for person in self.amity.people]
+		before_saving = [room, people]
+		self.amity.save_state("test")
+
+		#load state
+		self.amity.load_state('test')
+		load_room = [room.name for room in self.amity.rooms]
+		load_people = [person.name for person in self.amity.people]
+		after_loading = [load_room, load_people]
+
+		self.assertCountEqual(before_saving, after_loading)
 
 	
 if __name__ == '__main__':

@@ -409,10 +409,10 @@ class Amity(object):
 				elif len(rooms) == 1:
 					for allocated_room in rooms:
 						if isinstance(allocated_room, Office):
-							office = allocated_room[0].name
+							office = allocated_room.name
 							livingspace = None
 						elif isinstance(allocated_room, LivingSpace):
-							livingspace = allocated_room[0].name
+							livingspace = allocated_room.name
 							office = None
 				elif len(rooms) == 2:
 					person.wants_accomodation == 'Y'
