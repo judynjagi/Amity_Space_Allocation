@@ -145,7 +145,10 @@ class AmityApp(cmd.Cmd):
     def do_load_state(self,arg):
         """ Usage: load_state <sqlite_database>"""
         database = arg['<sqlite_database>']
-        amity.load_state(database)
+        if not os.path.exists( "./databases/" + database + '.sqlite'):
+            cprint("Invalid database", 'green')
+        else:
+            amity.load_state(database)
 
     @docopt_cmd
     def do_exit(self, arg):
