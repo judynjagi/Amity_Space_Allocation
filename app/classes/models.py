@@ -6,8 +6,7 @@ Base = declarative_base()
 
 class PeopleModel(Base):
 	__tablename__ = 'people'
-	id = Column(Integer, primary_key = True, autoincrement = True)
-	name = Column(String(250), nullable=False)
+	name = Column(String(250), primary_key = True, nullable=False)
 	role = Column(String(250), nullable=False)
 	accomodate = Column(String(250), nullable=False)
 	living_space = Column(Integer(), ForeignKey('living_space.lspace_name'))
@@ -29,6 +28,6 @@ class OfficeModel(Base):
 
 def create_db(db_name):
 	directory = 'databases/'
-	engine = create_engine('sqlite:///' + directory + db_name)
+	engine = create_engine('sqlite:///' + directory + db_name + '.sqlite')
 	Base.metadata.create_all(engine)
 	return engine
