@@ -182,7 +182,7 @@ class TestCreateRoom(unittest.TestCase):
 		room = [room.name for room in self.amity.rooms]
 		people = [person.name for person in self.amity.people]
 # 		before_saving = [room, people]
-# 		self.amity.save_state("test")
+		self.amity.save_state("test")
 
 		#load state
 		self.amity.load_state('test')
