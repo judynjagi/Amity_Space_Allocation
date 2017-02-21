@@ -1,7 +1,7 @@
 class People(object):
 	""""""
 	
-	def __init__(self,name, role = "None", wants_accomodation="N"):
+	def __init__(self,name, wants_accomodation, role = "None"):
 		self.name = name.upper()
 		self.role = role.upper()
 		self.wants_accomodation = wants_accomodation.upper()
@@ -13,12 +13,12 @@ class People(object):
 
 class Fellow(People):
 
-	def __init__(self, name):
+	def __init__(self, name, wants_accomodation):
 		
-		super(Fellow, self).__init__(name, role = "Fellow", wants_accomodation="N")
+		super(Fellow, self).__init__(name, wants_accomodation, "Fellow")
 
 	
 class Staff(People):
 	def __init__(self, name):
 	
-		super(Staff, self).__init__(name, role = "Staff", wants_accomodation="N")
+		super(Staff, self).__init__(name, 'N', "Staff")
